@@ -43,10 +43,10 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
     update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 
 # Verify Python version
-RUN python --version && pip --version
+RUN python3.10 --version && pip3.10 --version
 
 # Install PyTorch and related packages
-RUN pip install --no-cache-dir \
+RUN pip3.10 install --no-cache-dir \
     torch==2.5.0+cu124 \
     torchvision==0.20.0+cu124 \
     torchaudio==2.5.0+cu124 \
@@ -55,7 +55,7 @@ RUN pip install --no-cache-dir \
     --extra-index-url https://download.pytorch.org/whl/cu124
 
 # Install AI/ML specific packages
-RUN pip install --no-cache-dir \
+RUN pip3.10 install --no-cache-dir \
     xformers==0.0.28.post2 \
     https://github.com/camenduru/wheels/releases/download/torch-2.5.0-cu124/flash_attn-2.6.3-cp310-cp310-linux_x86_64.whl \
     opencv-python \
