@@ -6,9 +6,9 @@
   "iconUrl": "https://avatars.githubusercontent.com/u/105883948?s=200&v=4",
   "config": {
     "runsOn": "GPU",
-    "containerDiskInGb": 20,
+    "containerDiskInGb": 50,
     "gpuCount": 1,
-    "gpuIds": "ADA_24",
+    "gpuIds": "ADA_80_PRO",
     "allowedCudaVersions": [
       "12.7",
       "12.6"
