@@ -7,6 +7,8 @@ FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04@sha256:4a801ef9232d2b05e69df4eb8aa05
 ARG COMFYUI_REF=v0.3.68
 ARG MOCHI_WRAPPER_REF=d84ce774e94d1963c5d236f4ffedd2a93c87390f
 ARG VHS_REF=8923bd836bdab8b7bbdf4ed104b7d045e70c66e2
+# CI only: SKIP_MODELS=1 builds the image without the ~30 GB of weights.
+ARG SKIP_MODELS=0
 
 WORKDIR /
 
@@ -54,7 +56,8 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI /ComfyUI && \
     git -C /ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite checkout --detach ${VHS_REF}
 
 # Download model files
-RUN mkdir -p /ComfyUI/models/diffusion_models/mochi && \
+RUN if [ "${SKIP_MODELS}" = "1" ]; then echo "Skipping model download"; exit 0; fi && \
+    mkdir -p /ComfyUI/models/diffusion_models/mochi && \
     mkdir -p /ComfyUI/models/vae/mochi && \
     mkdir -p /ComfyUI/models/clip && \
     aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
