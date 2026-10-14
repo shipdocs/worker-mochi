@@ -1,0 +1,48 @@
+# Top-level Python dependencies of the worker image.
+# Regenerate the lock file after changing this file or the pinned ComfyUI version:
+#   uv pip compile requirements-worker.in -o requirements-worker.txt \
+#     --python-version 3.10 --python-platform x86_64-unknown-linux-gnu \
+#     --index-strategy unsafe-best-match --no-header --emit-index-url
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+# PyTorch with CUDA 12.8: first stable line with Blackwell (sm_100 / sm_120) kernels.
+torch==2.8.0+cu128
+torchvision==0.23.0+cu128
+torchaudio==2.8.0+cu128
+
+# ComfyUI v0.3.68 (requirements.txt of that tag, minus torch*)
+comfyui-frontend-package==1.28.8
+comfyui-workflow-templates==0.2.11
+comfyui-embedded-docs==0.3.1
+torchsde
+numpy>=1.25.0
+einops
+transformers>=4.37.2,<5
+tokenizers>=0.13.3
+sentencepiece
+safetensors>=0.4.2
+aiohttp>=3.11.8
+yarl>=1.18.0
+pyyaml
+Pillow
+scipy
+tqdm
+psutil
+alembic
+SQLAlchemy
+av>=14.2.0
+kornia>=0.7.1
+spandrel
+pydantic~=2.0
+pydantic-settings~=2.0
+
+# ComfyUI-MochiWrapper
+accelerate
+
+# ComfyUI-VideoHelperSuite
+opencv-python
+imageio-ffmpeg
+
+# Worker
+runpod
+requests

@@ -3,8 +3,6 @@ import runpod
 import torch
 import time
 import asyncio
-import server
-from nodes import NODE_CLASS_MAPPINGS, load_custom_node
 import random
 import string
 import hashlib
@@ -12,15 +10,27 @@ import mimetypes
 import requests
 from pathlib import Path
 
+from .comfy_bootstrap import (
+    check_cuda_compatibility,
+    load_worker_nodes,
+    prepare_comfyui_imports,
+)
+
+# Must run before importing any ComfyUI module (see comfy_bootstrap docstring).
+prepare_comfyui_imports()
+check_cuda_compatibility()
+
+import execution  # noqa: E402
+import server  # noqa: E402
+
 # Setup ComfyUI server
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 server_instance = server.PromptServer(loop)
-execution.PromptQueue(server)
+execution.PromptQueue(server_instance)
 
 # Load ComfyUI custom nodes
-load_custom_node("/ComfyUI/custom_nodes/ComfyUI-MochiWrapper")
-load_custom_node("/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite")
+NODE_CLASS_MAPPINGS = load_worker_nodes(loop)
 
 # Initialize ComfyUI nodes for the video generation pipeline
 CLIPLoader = NODE_CLASS_MAPPINGS["CLIPLoader"]()
@@ -41,7 +51,9 @@ with torch.inference_mode():
         "mochi_preview_dit_bf16.safetensors",
         "mochi_preview_vae_decoder_bf16.safetensors",
         "bf16",
-        "flash_attn",
+        # "sdpa" uses PyTorch's built-in attention and needs no extra wheel that has
+        # to match the torch/CUDA version (flash_attn, sage_attn).
+        os.environ.get("MOCHI_ATTENTION_MODE", "sdpa"),
     )
 
 
