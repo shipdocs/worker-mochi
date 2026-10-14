@@ -10,8 +10,8 @@
     "gpuCount": 1,
     "gpuIds": "ADA_80_PRO",
     "allowedCudaVersions": [
-      "12.7",
-      "12.6"
+      "12.8",
+      "12.9"
     ],
     "runtime": {
       "idleTimeout": 600,
