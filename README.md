@@ -4,6 +4,8 @@
 
 > Generate videos with Mochi as an endpoint on RunPod
 
+**New:** [`wan/`](wan/README.md) contains a faster, higher-quality worker for Wan 2.2 (text-to-video and image-to-video, 4-step LoRAs).
+
 ## Features
 
 - Video generation using [Mochi 1](https://github.com/genmoai/mochi) by [Genmo](https://genmo.ai)

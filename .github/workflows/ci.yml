@@ -25,7 +25,8 @@ jobs:
       - name: Run unit tests
         run: |
           python -m pip install pytest==8.0.0
-          python -m pytest tests -v
+          python -m pip install pillow==12.3.0 requests==2.34.2
+          python -m pytest tests wan/tests -v
 
   # Builds the real Dockerfile without the model weights (they don't fit on a
   # hosted runner). The last build step runs src/selftest.py, so this catches
@@ -45,3 +46,21 @@ jobs:
 
       - name: Build image without models (runs selftest)
         run: docker build --build-arg SKIP_MODELS=1 -t worker-mochi:ci .
+
+  # The Wan image has no baked-in weights, so it fits on a hosted runner. Its
+  # last build step starts ComfyUI and has it validate both workflows.
+  wan-image-smoke:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af
+          df -h /
+
+      - name: Build Wan image (runs selftest)
+        run: docker build -f wan/Dockerfile -t worker-wan:ci .
