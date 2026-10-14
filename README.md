@@ -8,7 +8,7 @@
 
 - Video generation using [Mochi 1](https://github.com/genmoai/mochi) by [Genmo](https://genmo.ai)
 - Automatic model loading and initialization
-- [UploadThing](https://uploadthing.com/) integration for video upload
+- The generated video is returned directly in the job output (base64), so it is never uploaded to a third party
 
 ## API Reference
 
@@ -37,6 +37,28 @@
   }
 }
 ```
+
+### Output
+
+```json
+{
+  "status": "SUCCESS",
+  "video": "<base64-encoded MP4>",
+  "filename": "Mochi_00001.mp4",
+  "mime_type": "video/mp4",
+  "size_bytes": 1234567
+}
+```
+
+The video is deleted from the worker after it is encoded. Save it with, for example:
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
+  https://api.runpod.ai/v2/<endpoint-id>/runsync -d @test_input.json \
+  | jq -r '.output.video' | base64 -d > video.mp4
+```
+
+Runpod limits the size of a job's output, so keep videos short (the defaults produce a few MB). On failure the output is `{"status": "ERROR", "error": "..."}` while the Runpod job itself still shows `COMPLETED`, so always check `output.status`.
 
 #### Core Parameters
 
@@ -67,7 +89,6 @@
 
 | Variable               | Description                                                                 | Default |
 | ---------------------- | --------------------------------------------------------------------------- | ------- |
-| `UPLOADTHING_API_KEY`  | UploadThing API key used to upload the generated video (required)           |         |
 | `MOCHI_ATTENTION_MODE` | Mochi attention backend: `sdpa`, `flash_attn`, `sage_attn` or `comfy`. Only `sdpa` and `comfy` work without installing extra packages | `sdpa`  |
 
 ## Deployment
@@ -121,7 +142,6 @@ docker run --rm --gpus all --entrypoint python3 -w /ComfyUI <image>:<tag> -m src
 ### Runpod endpoint settings
 
 - Container disk: at least 50 GB.
-- Environment variables: `UPLOADTHING_API_KEY` from a Runpod secret, e.g. `{{ RUNPOD_SECRET_uploadthing_api_key }}`. Never put the key itself in the template.
 - GPU types: any from the table above. The Hub config defaults to 80 GB H100-class GPUs.
 - CUDA: allow only hosts with CUDA 12.8 or newer, using **one** of the endpoint's two CUDA settings (allowed versions 12.8, 12.9 and 13.0, or minimum version 12.8), not both.
 

@@ -1,20 +1,14 @@
 import os
 import runpod
 import torch
-import time
 import asyncio
-import random
-import string
-import hashlib
-import mimetypes
-import requests
-from pathlib import Path
 
 from .comfy_bootstrap import (
     check_cuda_compatibility,
     load_worker_nodes,
     prepare_comfyui_imports,
 )
+from .video_output import video_result
 
 # Must run before importing any ComfyUI module (see comfy_bootstrap docstring).
 prepare_comfyui_imports()
@@ -55,100 +49,6 @@ with torch.inference_mode():
         # to match the torch/CUDA version (flash_attn, sage_attn).
         os.environ.get("MOCHI_ATTENTION_MODE", "sdpa"),
     )
-
-
-def upload_file_to_uploadthing(
-    file_path: str | Path,
-    max_retries: int = 2,
-    initial_delay: float = 5.0,
-) -> tuple[requests.Response, requests.Response, str]:
-    """
-    Upload file to UploadThing with retry mechanism.
-
-    Args:
-        file_path: Path to the file to upload
-        max_retries: Maximum number of retry attempts
-        initial_delay: Initial delay between retries in seconds
-
-    Returns:
-        Tuple containing (presigned_response, upload_response, file_name)
-    
-    Raises:
-        Exception: If upload fails after all retries
-    """
-    attempt = 0
-    last_error = None
-    file_path = Path(file_path)
-
-    while attempt <= max_retries:
-        try:
-            if attempt > 0:
-                delay = initial_delay * (2 ** (attempt - 1))
-                print(f"Retry attempt {attempt}/{max_retries} after {delay:.1f}s delay...")
-                time.sleep(delay)
-
-            # Generate file info
-            file_name = file_path.name
-            file_extension = file_path.suffix
-            random_string = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(8))
-            md5_hash = hashlib.md5(random_string.encode()).hexdigest()
-            new_file_name = f"{md5_hash}{file_extension}"
-            file_size = file_path.stat().st_size
-            file_type, _ = mimetypes.guess_type(str(file_path))
-
-            with open(file_path, "rb") as file:
-                file_content = file.read()
-
-            file_info = {"name": new_file_name, "size": file_size, "type": file_type}
-            uploadthing_api_key = os.getenv('UPLOADTHING_API_KEY')
-            
-            if not uploadthing_api_key:
-                raise ValueError("UPLOADTHING_API_KEY environment variable not set")
-
-            headers = {"x-uploadthing-api-key": uploadthing_api_key}
-            data = {
-                "contentDisposition": "inline",
-                "acl": "public-read",
-                "files": [file_info],
-            }
-
-            # Get presigned URL
-            presigned_response = requests.post(
-                "https://api.uploadthing.com/v6/uploadFiles",
-                headers=headers,
-                json=data,
-            )
-            presigned_response.raise_for_status()
-            
-            # Add response content logging
-            print(f"Presigned response status: {presigned_response.status_code}")
-            print(f"Presigned response content: {presigned_response.text}")
-            
-            presigned = presigned_response.json()["data"][0]
-            upload_url = presigned["url"]
-            fields = presigned["fields"]
-
-            # Perform actual upload
-            files = {"file": file_content}
-            upload_response = requests.post(upload_url, data=fields, files=files)
-            upload_response.raise_for_status()
-            
-            # Add upload response logging
-            print(f"Upload response status: {upload_response.status_code}")
-            print(f"Upload response content: {upload_response.text}")
-
-            print(f"File uploaded successfully: {presigned['fileUrl']}")
-            return presigned_response, upload_response, new_file_name
-
-        except Exception as e:
-            last_error = e
-            print(f"Upload attempt {attempt + 1} failed: {str(e)}")
-            # Add more detailed error information
-            if isinstance(e, requests.exceptions.RequestException):
-                print(f"Request error details: {e.response.text if e.response else 'No response'}")
-            attempt += 1
-
-    raise last_error
 
 
 @torch.inference_mode()
@@ -219,31 +119,9 @@ def generate(input):
             save_metadata=True,
         )
 
-        # Step 7: Upload video with retry mechanism
-        print(f"uploading video into storage.")
-        try:
-            # Get the path to the generated video file
-            _, output_files = out_video["result"][0]
-            video_path = output_files[-1]
-
-            # Upload the file
-            presigned_response, upload_response, file_name = upload_file_to_uploadthing(video_path)
-            video_url = presigned_response.json()['data'][0]['fileUrl']
-
-            # Clean up the temporary file
-            if os.path.exists(video_path):
-                os.remove(video_path)
-
-            return {
-                "result": video_url,
-                "status": "SUCCESS"
-            }
-        except Exception as e:
-            print(f"Upload failed: {str(e)}")
-            # Clean up in case of error
-            if "video_path" in locals() and os.path.exists(video_path):
-                os.remove(video_path)
-            raise  # Re-raise the exception to be caught by the outer try-except
+        # Step 7: Return the video inline (base64), so it never leaves Runpod
+        _, output_files = out_video["result"][0]
+        return video_result(output_files[-1])
 
     except Exception as e:
         print(f"Generation failed: {str(e)}")

@@ -6,9 +6,6 @@ numpy>=1.24.0
 Pillow>=10.0.0
 runpod
 
-# Vercel Blob Storage
-git+https://github.com/timpietrusky/vercel_blob.git
-
 # Testing tools
 pytest==8.0.0
 pytest-assume==2.4.3
