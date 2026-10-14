@@ -22,10 +22,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Run startup regression tests
+      - name: Run unit tests
         run: |
           python -m pip install pytest==8.0.0
-          python -m pytest tests/test_comfy_bootstrap.py -v
+          python -m pytest tests -v
 
   # Builds the real Dockerfile without the model weights (they don't fit on a
   # hosted runner). The last build step runs src/selftest.py, so this catches

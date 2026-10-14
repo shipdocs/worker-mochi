@@ -30,20 +30,9 @@ Thank you for your interest in contributing to worker-mochi! This document provi
    pip install -r requirements-dev.txt
    ```
 
-4. Set up environment variables:
-   ```bash
-   # Create a .env file with:
-   UPLOADTHING_API_KEY=your_api_key_here  # Get this from UploadThing dashboard
-   ```
+## Video Output
 
-## Storage Configuration
-
-We use UploadThing for video storage and delivery:
-
-- Fast CDN delivery worldwide
-- Reliable upload with retry mechanism
-- Direct file URLs for easy integration
-- Automatic video format handling
+The handler returns the generated video base64-encoded in the job output (`src/video_output.py`); it is not uploaded anywhere.
 
 ## Code Quality
 
@@ -75,9 +64,6 @@ pytest
 Run specific test categories:
 
 ```bash
-# Run UploadThing integration tests
-pytest tests/test_blob_storage.py::test_upload_file_to_uploadthing_real -v
-
 # Run unit tests only
 pytest tests/ -m "not integration"
 ```
@@ -90,33 +76,6 @@ pytest tests/ -m "not integration"
 4. Use descriptive test names
 5. Include both success and failure cases
 6. Mock external services when appropriate
-
-### Testing UploadThing Integration
-
-When writing tests that involve UploadThing:
-
-1. Use the provided mock fixtures for unit tests
-2. Use `@pytest.mark.integration` for real API tests
-3. Always clean up test files after upload
-4. Test retry logic for network failures
-5. Verify both `fileUrl` and `appUrl` handling
-
-Example test structure:
-
-```python
-def test_upload_success(mock_video_file):
-    """Test successful video upload."""
-    # Test implementation
-
-def test_upload_retry(mock_video_file):
-    """Test retry logic on network failure."""
-    # Test implementation
-
-@pytest.mark.integration
-def test_upload_real():
-    """Test actual UploadThing integration."""
-    # Real API test implementation
-```
 
 ## Pull Request Process
 
