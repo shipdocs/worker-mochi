@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# The image itself is built by Runpod's GitHub integration on each GitHub release
+# (see README "Deployment"). It can't be pushed to GHCR: the Mochi DiT weights are
+# a single 20 GB layer and GHCR limits layers to 10 GB.
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Run startup regression tests
+        run: |
+          python -m pip install pytest==8.0.0
+          python -m pytest tests/test_comfy_bootstrap.py -v
